@@ -1,0 +1,57 @@
+{
+  "hero": {
+    "icon": "ShoppingBag",
+    "mainHeading": "SHOPIFY",
+    "subHeading": "DEVELOPER",
+    "description": "Transforming visions into high-converting e-commerce experiences",
+    "primaryButtonText": "Explore My Work",
+    "secondaryButtonText": "Let's Talk"
+  },
+  "branding": {
+    "logoUrl": "",
+    "logoText": "PORTFOLIO",
+    "useImageLogo": false
+  },
+  "stats": [
+    { "text": "★ 50+ Projects", "id": 1 },
+    { "text": "★ 30+ Happy Clients", "id": 2 },
+    { "text": "★ 5+ Years Experience", "id": 3 }
+  ],
+  "work": {
+    "heading": "FEATURED WORK",
+    "subheading": "Projects that make an impact",
+    "addButtonText": "Add Project",
+    "showMoreText": "Show More",
+    "showLessText": "Show Less"
+  },
+  "expertise": {
+    "heading": "EXPERTISE",
+    "subheading": "Technologies I master",
+    "skills": [
+      { "name": "Shopify Liquid", "level": 95, "icon": "Code" },
+      { "name": "Theme Development", "level": 90, "icon": "Package" }
+    ]
+  },
+  "contact": {
+    "heading": "LET'S CREATE",
+    "subheading": "Ready to elevate your Shopify store?",
+    "getInTouchTitle": "Get In Touch",
+    "getInTouchDescription": "Have a project in mind?",
+    "contactInfo": [
+      { "icon": "Mail", "label": "Email", "value": "hello@example.com", "link": "mailto:hello@example.com" }
+    ],
+    "availabilityText": "Available for freelance work",
+    "statusText": "Currently accepting new projects",
+    "formTitle": "Send a Message",
+    "formFields": {
+      "name": { "label": "Your Name", "placeholder": "John Doe" },
+      "email": { "label": "Email Address", "placeholder": "john@example.com" },
+      "phone": { "label": "Contact Number", "placeholder": "+1 (555) 000-0000" },
+      "description": { "label": "Project Description", "placeholder": "Tell me about your project..." }
+    },
+    "submitButtonText": "Send Message"
+  },
+  "footer": {
+    "copyrightText": "© 2024 Developer. Crafted with passion."
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "projects": {
+    "shopify": [],
+    "wordpress": [],
+    "react": []
+  },
+  "tabs": [
+    { "id": "shopify", "name": "Shopify", "icon": "ShoppingBag" },
+    { "id": "wordpress", "name": "WordPress", "icon": "FileCode" },
+    { "id": "react", "name": "React", "icon": "Blocks" }
+  ],
+  "messages": []
+}
