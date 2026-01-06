@@ -22,8 +22,10 @@ import { initialProjects } from '../data/projects';
 import { initialTabs } from '../data/tabs';
 import { defaultSettings } from '../data/settings';
 
-// API configuration
-const API_URL = 'http://localhost:5000/api';
+// Configuration for GitHub Pages deployment
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+const BASE_PATH = IS_PRODUCTION ? '/portfolio' : '';
+const API_URL = IS_PRODUCTION ? null : 'http://localhost:5000/api'; // No backend in production
 
 export default function ShopifyPortfolio() {
 
@@ -69,11 +71,23 @@ export default function ShopifyPortfolio() {
     /* ===================== CHECK BACKEND AVAILABILITY ===================== */
     useEffect(() => {
         const checkBackend = async () => {
+            // Skip backend check in production (GitHub Pages)
+            if (IS_PRODUCTION || !API_URL) {
+                setBackendAvailable(false);
+                console.log('Production mode - using localStorage only');
+                return;
+            }
+
             try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2000);
+                
                 const response = await fetch(`${API_URL}/health`, { 
                     method: 'GET',
-                    timeout: 2000 
+                    signal: controller.signal
                 });
+                
+                clearTimeout(timeoutId);
                 setBackendAvailable(response.ok);
             } catch (error) {
                 setBackendAvailable(false);
@@ -86,7 +100,7 @@ export default function ShopifyPortfolio() {
 
     /* ===================== AUTO-SAVE TO SOURCE FILES ===================== */
     const saveToSourceFiles = async (portfolioData, settings) => {
-        if (!backendAvailable) {
+        if (!backendAvailable || !API_URL) {
             console.log('Backend not available - data saved to localStorage only');
             return false;
         }
@@ -125,7 +139,7 @@ export default function ShopifyPortfolio() {
     useEffect(() => {
         try {
             // Load admin status
-            const admin = localStorage.getItem('admin-logged-in');
+            const admin = localStorage.getItem('portfolio-admin-logged-in');
             if (admin === 'true') setIsAdmin(true);
 
             // Load all portfolio data from single storage key
@@ -154,31 +168,43 @@ export default function ShopifyPortfolio() {
             // Save to localStorage (for immediate use)
             localStorage.setItem('portfolio-data', JSON.stringify(portfolioData));
             
-            // Also save to actual source files via backend (if admin)
-            if (isAdmin) {
+            // Also save to actual source files via backend (if admin and backend available)
+            if (isAdmin && backendAvailable) {
                 saveToSourceFiles(portfolioData, settings);
             }
         }
-    }, [portfolioData, loading, isAdmin]);
+    }, [portfolioData, loading, isAdmin, backendAvailable]);
 
     useEffect(() => {
         if (!loading) {
             // Save to localStorage (for immediate use)
             localStorage.setItem('portfolio-settings', JSON.stringify(settings));
             
-            // Also save to actual source files via backend (if admin)
-            if (isAdmin) {
+            // Also save to actual source files via backend (if admin and backend available)
+            if (isAdmin && backendAvailable) {
                 saveToSourceFiles(portfolioData, settings);
             }
         }
-    }, [settings, loading, isAdmin]);
+    }, [settings, loading, isAdmin, backendAvailable]);
 
     /* ===================== CHECK URL FOR ADMIN ROUTE ===================== */
     useEffect(() => {
         const checkAdminRoute = () => {
             const path = window.location.pathname;
-            if (path === '/admin' || path.endsWith('/admin')) {
-                const admin = localStorage.getItem('admin-logged-in');
+            const hash = window.location.hash;
+            
+            // Check for admin route - handle both GitHub Pages and local development
+            const isAdminRoute = 
+                path === '/admin' || 
+                path === `${BASE_PATH}/admin` ||
+                path.endsWith('/admin') ||
+                hash === '#/admin' ||
+                hash === '#admin';
+            
+            console.log('Checking admin route:', { path, hash, BASE_PATH, isAdminRoute });
+            
+            if (isAdminRoute) {
+                const admin = localStorage.getItem('portfolio-admin-logged-in');
                 if (admin !== 'true') {
                     setShowAdminLogin(true);
                 } else {
@@ -191,7 +217,13 @@ export default function ShopifyPortfolio() {
 
         // Listen for popstate (back/forward navigation)
         window.addEventListener('popstate', checkAdminRoute);
-        return () => window.removeEventListener('popstate', checkAdminRoute);
+        // Listen for hash changes (for GitHub Pages routing)
+        window.addEventListener('hashchange', checkAdminRoute);
+        
+        return () => {
+            window.removeEventListener('popstate', checkAdminRoute);
+            window.removeEventListener('hashchange', checkAdminRoute);
+        };
     }, []);
 
     /* ===================== GLOBAL EVENTS ===================== */
@@ -216,16 +248,30 @@ export default function ShopifyPortfolio() {
     const handleAdminLogin = () => {
         setIsAdmin(true);
         setShowAdminLogin(false);
-        localStorage.setItem('admin-logged-in', 'true');
-        // Update URL without page reload
-        window.history.pushState({}, '', '/admin');
+        localStorage.setItem('portfolio-admin-logged-in', 'true');
+        
+        // Update URL based on environment
+        if (IS_PRODUCTION) {
+            window.location.hash = '#/admin';
+        } else {
+            window.history.pushState({}, '', '/admin');
+        }
+        
+        console.log('Admin logged in successfully');
     };
 
     const handleLogout = () => {
         setIsAdmin(false);
-        localStorage.setItem('admin-logged-in', 'false');
+        localStorage.setItem('portfolio-admin-logged-in', 'false');
+        
         // Return to home URL
-        window.history.pushState({}, '', '/');
+        if (IS_PRODUCTION) {
+            window.location.hash = '';
+        } else {
+            window.history.pushState({}, '', '/');
+        }
+        
+        console.log('Admin logged out');
     };
 
     const handleSubmitForm = e => {
@@ -324,6 +370,11 @@ export default function ShopifyPortfolio() {
 
     /* ===================== MANUAL SAVE TO FILES ===================== */
     const handleManualSaveToFiles = async () => {
+        if (IS_PRODUCTION) {
+            alert('⚠️ Backend features are not available on GitHub Pages.\n\nYour changes are saved to browser localStorage and will persist across sessions.\n\nTo enable file export:\n1. Download the files using the Export button below\n2. Replace them in your local project\n3. Push to GitHub');
+            return;
+        }
+
         const success = await saveToSourceFiles(portfolioData, settings);
         
         if (success) {
@@ -418,17 +469,17 @@ export const initialMessages = ${JSON.stringify(messages, null, 4)};`;
             <CustomCursor mousePos={mousePos} cursorVariant={cursorVariant} />
             <AnimatedBackground mousePos={mousePos} />
 
-            {/* Backend Status Indicator
+            {/* Admin Mode Indicator */}
             {isAdmin && (
-                <div className="fixed top-24 left-6 z-40 bg-zinc-900/90 backdrop-blur-sm px-4 py-2 rounded-full border border-zinc-800 text-xs">
+                <div className="fixed top-24 left-6 z-40 bg-gradient-to-r from-purple-500/20 to-pink-500/20 backdrop-blur-sm px-4 py-2 rounded-full border border-purple-500/50 text-xs">
                     <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${backendAvailable ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
-                        <span className="text-gray-400">
-                            {backendAvailable ? 'Auto-save: ON' : 'Auto-save: OFF (localStorage only)'}
+                        <div className="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></div>
+                        <span className="text-purple-200 font-semibold">
+                            Admin Mode Active
                         </span>
                     </div>
                 </div>
-            )} */}
+            )}
 
             {/* Save Success Notification */}
             {showSaveNotification && (
@@ -456,8 +507,19 @@ export const initialMessages = ${JSON.stringify(messages, null, 4)};`;
             {/* Admin Action Buttons - Floating */}
             {isAdmin && (
                 <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3">
-                    {/* Manual Save Button (if backend not available) */}
-                    {!backendAvailable && (
+                    {/* Export All Files Button - Always show in admin mode */}
+                    <button
+                        onClick={exportAllJSFiles}
+                        className="group bg-gradient-to-r from-green-500 to-emerald-500 p-4 rounded-full shadow-2xl hover:shadow-green-500/50 transition-all"
+                        title="Export All Data as JS Files"
+                        onMouseEnter={() => setCursorVariant('hover')}
+                        onMouseLeave={() => setCursorVariant('default')}
+                    >
+                        <Download className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                    </button>
+                    
+                    {/* Manual Save Button - Show if backend not available */}
+                    {!backendAvailable && !IS_PRODUCTION && (
                         <button
                             onClick={handleManualSaveToFiles}
                             className="group bg-gradient-to-r from-blue-500 to-purple-500 p-4 rounded-full shadow-2xl hover:shadow-blue-500/50 transition-all"
@@ -468,17 +530,6 @@ export const initialMessages = ${JSON.stringify(messages, null, 4)};`;
                             <Save className="w-6 h-6 group-hover:scale-110 transition-transform" />
                         </button>
                     )}
-                    
-                    {/* Export All Files Button
-                    <button
-                        onClick={exportAllJSFiles}
-                        className="group bg-gradient-to-r from-green-500 to-emerald-500 p-4 rounded-full shadow-2xl hover:shadow-green-500/50 transition-all"
-                        title="Export All Data as JS Files"
-                        onMouseEnter={() => setCursorVariant('hover')}
-                        onMouseLeave={() => setCursorVariant('default')}
-                    >
-                        <Download className="w-6 h-6 group-hover:scale-110 transition-transform" />
-                    </button> */}
                 </div>
             )}
 
@@ -488,7 +539,11 @@ export const initialMessages = ${JSON.stringify(messages, null, 4)};`;
                     onClose={() => {
                         setShowAdminLogin(false);
                         // Go back to home if closing login
-                        window.history.pushState({}, '', '/');
+                        if (IS_PRODUCTION) {
+                            window.location.hash = '';
+                        } else {
+                            window.history.pushState({}, '', '/');
+                        }
                     }}
                     onLogin={handleAdminLogin}
                 />
