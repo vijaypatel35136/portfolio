@@ -146,6 +146,31 @@ export default function ShopifyPortfolio() {
         } finally {
             setLoading(false);
         }
+
+        // Listen for storage changes (when data is updated in another tab or from admin panel)
+        const handleStorageChange = (e) => {
+            if (e.key === 'portfolio-settings' && e.newValue) {
+                try {
+                    const updated = JSON.parse(e.newValue);
+                    setSettings(updated);
+                    console.log('✅ Settings updated from storage');
+                } catch (err) {
+                    console.error('Error parsing updated settings:', err);
+                }
+            }
+            if (e.key === 'portfolio-data' && e.newValue) {
+                try {
+                    const updated = JSON.parse(e.newValue);
+                    setPortfolioData(updated);
+                    console.log('✅ Portfolio data updated from storage');
+                } catch (err) {
+                    console.error('Error parsing updated portfolio data:', err);
+                }
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
     }, []);
 
     /* ===================== SAVE TO STORAGE & FILES ===================== */
@@ -163,16 +188,11 @@ export default function ShopifyPortfolio() {
 
     useEffect(() => {
         if (!loading) {
-            // Only save to localStorage if NOT in admin mode
-            // This prevents admin changes from persisting to the live website
-            if (!isAdmin) {
-                localStorage.setItem('portfolio-settings', JSON.stringify(settings));
-            } else {
-                // Also save to actual source files via backend (if admin)
-                saveToSourceFiles(portfolioData, settings);
-            }
+            // Always save settings to localStorage
+            // This ensures changes persist on GitHub Pages and in local development
+            localStorage.setItem('portfolio-settings', JSON.stringify(settings));
         }
-    }, [settings, loading, isAdmin]);
+    }, [settings, loading]);
 
     /* ===================== CHECK URL FOR ADMIN ROUTE (HASH-BASED) ===================== */
     useEffect(() => {
@@ -237,12 +257,11 @@ export default function ShopifyPortfolio() {
 
     const handleLogout = () => {
         setIsAdmin(false);
-        // Reset settings to defaults when logging out (prevents admin changes from persisting)
-        setSettings(defaultSettings);
-        // Clear admin session from localStorage
         localStorage.setItem('admin-logged-in', 'false');
-        // Reload page to ensure clean state
-        window.location.reload();
+        // Return to home
+        window.location.hash = '';
+        // Reload to load the latest saved settings from files
+        setTimeout(() => window.location.reload(), 500);
     };
 
     const handleSubmitForm = e => {
@@ -333,11 +352,23 @@ export default function ShopifyPortfolio() {
         }));
     };
 
-    const handleSaveSettings = (newSettings) => {
+    const handleSaveSettings = async (newSettings) => {
         setSettings(newSettings);
         setShowSettings(false);
-        // Show a message that changes are only in this session and won't be on the live site
-        alert('Settings updated for this session only!\n\nThese changes will NOT be saved to the live website (https://vijaypatel35136.github.io/portfolio) until you export and deploy them.\n\nUse the Export button to download updated files.');
+        
+        // Settings are automatically saved to localStorage via the useEffect hook
+        // Force a page reload to ensure settings are reflected everywhere
+        setTimeout(() => {
+            window.location.reload();
+        }, 500);
+        
+        // If backend is available (local dev), also save to settings.js
+        if (backendAvailable) {
+            const success = await saveToSourceFiles(portfolioData, newSettings);
+            if (success) {
+                console.log('✅ Settings also saved to settings.js!');
+            }
+        }
     };
 
     /* ===================== MANUAL SAVE TO FILES ===================== */
