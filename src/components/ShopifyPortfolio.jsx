@@ -23,7 +23,9 @@ import { initialTabs } from '../data/tabs';
 import { defaultSettings } from '../data/settings';
 
 // API configuration
-const API_URL = 'http://localhost:5000/api';
+// For GitHub Pages: use your deployed backend URL (e.g., Render, Railway, Vercel)
+// For local development: use localhost:5000
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 export default function ShopifyPortfolio() {
 
