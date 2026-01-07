@@ -126,6 +126,8 @@ export default function ShopifyPortfolio() {
     /* ===================== LOAD FROM STORAGE ===================== */
     useEffect(() => {
         try {
+            console.log('📂 Loading data from localStorage...');
+            
             // Load admin status
             const admin = localStorage.getItem('admin-logged-in');
             if (admin === 'true') setIsAdmin(true);
@@ -134,6 +136,7 @@ export default function ShopifyPortfolio() {
             const storedData = localStorage.getItem('portfolio-data');
             if (storedData) {
                 const parsed = JSON.parse(storedData);
+                console.log('✅ Loaded portfolio data from localStorage:', parsed);
                 setPortfolioData(parsed);
             }
 
@@ -141,10 +144,13 @@ export default function ShopifyPortfolio() {
             const storedSettings = localStorage.getItem('portfolio-settings');
             if (storedSettings) {
                 const parsed = JSON.parse(storedSettings);
+                console.log('✅ Loaded settings from localStorage:', parsed);
                 setSettings(parsed);
+            } else {
+                console.log('⚠️ No saved settings found, using defaults');
             }
         } catch (err) {
-            console.error('Storage load error:', err);
+            console.error('❌ Storage load error:', err);
         } finally {
             setLoading(false);
         }
@@ -154,8 +160,8 @@ export default function ShopifyPortfolio() {
             if (e.key === 'portfolio-settings' && e.newValue) {
                 try {
                     const updated = JSON.parse(e.newValue);
+                    console.log('🔄 Settings updated from storage:', updated);
                     setSettings(updated);
-                    console.log('✅ Settings updated from storage');
                 } catch (err) {
                     console.error('Error parsing updated settings:', err);
                 }
@@ -163,8 +169,8 @@ export default function ShopifyPortfolio() {
             if (e.key === 'portfolio-data' && e.newValue) {
                 try {
                     const updated = JSON.parse(e.newValue);
+                    console.log('🔄 Portfolio data updated from storage:', updated);
                     setPortfolioData(updated);
-                    console.log('✅ Portfolio data updated from storage');
                 } catch (err) {
                     console.error('Error parsing updated portfolio data:', err);
                 }
@@ -192,6 +198,7 @@ export default function ShopifyPortfolio() {
         if (!loading) {
             // Always save settings to localStorage
             // This ensures changes persist on GitHub Pages and in local development
+            console.log('💾 Saving settings to localStorage:', settings);
             localStorage.setItem('portfolio-settings', JSON.stringify(settings));
         }
     }, [settings, loading]);
@@ -354,32 +361,42 @@ export default function ShopifyPortfolio() {
         }));
     };
 
-    const handleSaveSettings = async (newSettings) => {
-        // Save settings immediately to state
+    const handleSaveSettings = (newSettings) => {
+        // 1. Save to localStorage FIRST (synchronously)
+        try {
+            localStorage.setItem('portfolio-settings', JSON.stringify(newSettings));
+            console.log('✅ Settings saved to localStorage:', newSettings);
+        } catch (err) {
+            console.error('❌ Failed to save to localStorage:', err);
+            alert('⚠️ Failed to save settings. Please try again.');
+            return;
+        }
+        
+        // 2. Update state
         setSettings(newSettings);
+        
+        // 3. Close modal
         setShowSettings(false);
         
-        // Save to localStorage immediately to ensure persistence
-        localStorage.setItem('portfolio-settings', JSON.stringify(newSettings));
-        
-        // Show success notification
+        // 4. Show notification
         setShowSaveNotification(true);
         setTimeout(() => setShowSaveNotification(false), 3000);
         
-        // Show alert confirming save
-        alert('✅ Settings saved successfully!\n\nYour changes will appear instantly on the website.');
+        // 5. Show success message
+        alert('✅ Settings saved successfully!\n\nReloading page to apply changes...');
         
-        // Force a page reload to ensure all components re-render with new settings
+        // 6. Reload page AFTER localStorage is definitely saved
+        // Use a longer delay to ensure everything is written
         setTimeout(() => {
+            console.log('Reloading page...');
             window.location.reload();
-        }, 1000);
+        }, 1500);
         
-        // If backend is available (local dev), also save to settings.js
+        // 7. If backend is available, also save to file (non-blocking)
         if (backendAvailable) {
-            const success = await saveToSourceFiles(portfolioData, newSettings);
-            if (success) {
-                console.log('✅ Settings also saved to settings.js!');
-            }
+            saveToSourceFiles(portfolioData, newSettings).catch(err => {
+                console.log('Backend save skipped:', err);
+            });
         }
     };
 
