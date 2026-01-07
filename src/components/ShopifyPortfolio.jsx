@@ -355,14 +355,24 @@ export default function ShopifyPortfolio() {
     };
 
     const handleSaveSettings = async (newSettings) => {
+        // Save settings immediately to state
         setSettings(newSettings);
         setShowSettings(false);
         
-        // Settings are automatically saved to localStorage via the useEffect hook
-        // Force a page reload to ensure settings are reflected everywhere
+        // Save to localStorage immediately to ensure persistence
+        localStorage.setItem('portfolio-settings', JSON.stringify(newSettings));
+        
+        // Show success notification
+        setShowSaveNotification(true);
+        setTimeout(() => setShowSaveNotification(false), 3000);
+        
+        // Show alert confirming save
+        alert('✅ Settings saved successfully!\n\nYour changes will appear instantly on the website.');
+        
+        // Force a page reload to ensure all components re-render with new settings
         setTimeout(() => {
             window.location.reload();
-        }, 500);
+        }, 1000);
         
         // If backend is available (local dev), also save to settings.js
         if (backendAvailable) {
