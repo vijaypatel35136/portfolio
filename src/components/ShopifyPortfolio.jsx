@@ -163,21 +163,29 @@ export default function ShopifyPortfolio() {
 
     useEffect(() => {
         if (!loading) {
-            // Save to localStorage (for immediate use)
-            localStorage.setItem('portfolio-settings', JSON.stringify(settings));
-            
-            // Also save to actual source files via backend (if admin)
-            if (isAdmin) {
+            // Only save to localStorage if NOT in admin mode
+            // This prevents admin changes from persisting to the live website
+            if (!isAdmin) {
+                localStorage.setItem('portfolio-settings', JSON.stringify(settings));
+            } else {
+                // Also save to actual source files via backend (if admin)
                 saveToSourceFiles(portfolioData, settings);
             }
         }
     }, [settings, loading, isAdmin]);
 
-    /* ===================== CHECK URL FOR ADMIN ROUTE ===================== */
+    /* ===================== CHECK URL FOR ADMIN ROUTE (HASH-BASED) ===================== */
     useEffect(() => {
         const checkAdminRoute = () => {
-            const path = window.location.pathname;
-            if (path === '/admin' || path.endsWith('/admin')) {
+            // Check hash for admin route (works with GitHub Pages)
+            const hash = window.location.hash;
+            
+            // Check if hash contains admin in any form
+            const isAdminRoute = hash === '#/admin' || 
+                                 hash === '#admin' || 
+                                 hash.includes('/admin');
+            
+            if (isAdminRoute) {
                 const admin = localStorage.getItem('admin-logged-in');
                 if (admin !== 'true') {
                     setShowAdminLogin(true);
@@ -189,9 +197,15 @@ export default function ShopifyPortfolio() {
 
         checkAdminRoute();
 
+        // Listen for hash changes (primary for GitHub Pages)
+        window.addEventListener('hashchange', checkAdminRoute);
         // Listen for popstate (back/forward navigation)
         window.addEventListener('popstate', checkAdminRoute);
-        return () => window.removeEventListener('popstate', checkAdminRoute);
+        
+        return () => {
+            window.removeEventListener('hashchange', checkAdminRoute);
+            window.removeEventListener('popstate', checkAdminRoute);
+        };
     }, []);
 
     /* ===================== GLOBAL EVENTS ===================== */
@@ -217,15 +231,18 @@ export default function ShopifyPortfolio() {
         setIsAdmin(true);
         setShowAdminLogin(false);
         localStorage.setItem('admin-logged-in', 'true');
-        // Update URL without page reload
-        window.history.pushState({}, '', '/admin');
+        // Use hash-based routing for GitHub Pages compatibility
+        window.location.hash = '#/admin';
     };
 
     const handleLogout = () => {
         setIsAdmin(false);
+        // Reset settings to defaults when logging out (prevents admin changes from persisting)
+        setSettings(defaultSettings);
+        // Clear admin session from localStorage
         localStorage.setItem('admin-logged-in', 'false');
-        // Return to home URL
-        window.history.pushState({}, '', '/');
+        // Reload page to ensure clean state
+        window.location.reload();
     };
 
     const handleSubmitForm = e => {
@@ -319,7 +336,8 @@ export default function ShopifyPortfolio() {
     const handleSaveSettings = (newSettings) => {
         setSettings(newSettings);
         setShowSettings(false);
-        alert('Settings saved successfully!');
+        // Show a message that changes are only in this session and won't be on the live site
+        alert('Settings updated for this session only!\n\nThese changes will NOT be saved to the live website (https://vijaypatel35136.github.io/portfolio) until you export and deploy them.\n\nUse the Export button to download updated files.');
     };
 
     /* ===================== MANUAL SAVE TO FILES ===================== */
@@ -418,7 +436,7 @@ export const initialMessages = ${JSON.stringify(messages, null, 4)};`;
             <CustomCursor mousePos={mousePos} cursorVariant={cursorVariant} />
             <AnimatedBackground mousePos={mousePos} />
 
-            {/* Backend Status Indicator
+            {/* Backend Status Indicator */}
             {isAdmin && (
                 <div className="fixed top-24 left-6 z-40 bg-zinc-900/90 backdrop-blur-sm px-4 py-2 rounded-full border border-zinc-800 text-xs">
                     <div className="flex items-center gap-2">
@@ -428,7 +446,7 @@ export const initialMessages = ${JSON.stringify(messages, null, 4)};`;
                         </span>
                     </div>
                 </div>
-            )} */}
+            )}
 
             {/* Save Success Notification */}
             {showSaveNotification && (
@@ -469,7 +487,7 @@ export const initialMessages = ${JSON.stringify(messages, null, 4)};`;
                         </button>
                     )}
                     
-                    {/* Export All Files Button
+                    {/* Export All Files Button */}
                     <button
                         onClick={exportAllJSFiles}
                         className="group bg-gradient-to-r from-green-500 to-emerald-500 p-4 rounded-full shadow-2xl hover:shadow-green-500/50 transition-all"
@@ -478,7 +496,7 @@ export const initialMessages = ${JSON.stringify(messages, null, 4)};`;
                         onMouseLeave={() => setCursorVariant('default')}
                     >
                         <Download className="w-6 h-6 group-hover:scale-110 transition-transform" />
-                    </button> */}
+                    </button>
                 </div>
             )}
 
@@ -488,7 +506,10 @@ export const initialMessages = ${JSON.stringify(messages, null, 4)};`;
                     onClose={() => {
                         setShowAdminLogin(false);
                         // Go back to home if closing login
-                        window.history.pushState({}, '', '/');
+                        window.location.hash = '';
+                        if (window.location.pathname.includes('/admin')) {
+                            window.history.pushState({}, '', window.location.pathname.replace('/admin', ''));
+                        }
                     }}
                     onLogin={handleAdminLogin}
                 />
