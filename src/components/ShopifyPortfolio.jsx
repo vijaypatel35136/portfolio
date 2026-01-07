@@ -23,9 +23,10 @@ import { initialTabs } from '../data/tabs';
 import { defaultSettings } from '../data/settings';
 
 // API configuration
-// For GitHub Pages: use your deployed backend URL (e.g., Render, Railway, Vercel)
+// For GitHub Pages: use empty string (no backend)
 // For local development: use localhost:5000
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+// Vite uses import.meta.env.VITE_* for environment variables
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export default function ShopifyPortfolio() {
 
@@ -71,15 +72,28 @@ export default function ShopifyPortfolio() {
     /* ===================== CHECK BACKEND AVAILABILITY ===================== */
     useEffect(() => {
         const checkBackend = async () => {
+            // If API_URL is empty, skip backend check (GitHub Pages with localStorage only)
+            if (!API_URL || API_URL.trim() === '') {
+                console.log('⚠️ No backend configured - using localStorage only');
+                setBackendAvailable(false);
+                return;
+            }
+            
             try {
+                console.log('🔍 Checking backend availability at:', API_URL);
                 const response = await fetch(`${API_URL}/health`, { 
                     method: 'GET',
                     timeout: 2000 
                 });
                 setBackendAvailable(response.ok);
+                if (response.ok) {
+                    console.log('✅ Backend is available!');
+                } else {
+                    console.log('⚠️ Backend responded but not healthy');
+                }
             } catch (error) {
                 setBackendAvailable(false);
-                console.log('Backend not available - using localStorage only');
+                console.log('⚠️ Backend not available - data saved to localStorage only');
             }
         };
         
