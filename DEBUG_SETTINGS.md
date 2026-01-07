@@ -10,11 +10,6 @@ npm install
 
 # 2. Start development server
 npm start
-
-# 3. Go to http://localhost:3000/#/admin
-# 4. Login and change settings
-# 5. Click "Save All Settings"
-# 6. Check if page reloads and settings appear
 ```
 
 **If it works locally**, then it's a GitHub Pages deployment issue.

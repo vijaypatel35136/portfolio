@@ -1,5 +1,5 @@
 // Auto-saved from admin panel
-// Last updated: 1/6/2026, 12:10:47 PM
+// Last updated: 1/7/2026, 10:38:34 AM
 
 export const initialProjects = {
     "shopify": [
@@ -84,16 +84,28 @@ export const initialProjects = {
     ],
     "wordpress": [
         {
-            "title": "Hello World",
-            "desc": "Hello World Project",
+            "title": "Hello Ajay Blog",
+            "desc": "This is ajay blog",
             "tech": [
                 "Wordpress"
             ],
             "color": "from-blue-500 to-indigo-500",
             "gradient": "bg-gradient-to-br from-blue-500/20 to-indigo-500/20",
-            "link": "https://www.wordpress.com",
+            "link": "www.ajay.com",
             "category": "wordpress",
-            "id": 1767677840635
+            "id": 1767762109634
+        },
+        {
+            "title": "Hello Wordpress",
+            "desc": "Hello Wordpress Project",
+            "tech": [
+                "Wordpress"
+            ],
+            "color": "from-green-500 to-teal-500",
+            "gradient": "bg-gradient-to-br from-green-500/20 to-teal-500/20",
+            "link": "https://www.wordpress.org",
+            "category": "wordpress",
+            "id": 1767678968987
         },
         {
             "id": 7,

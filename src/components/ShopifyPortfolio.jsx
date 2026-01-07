@@ -22,10 +22,6 @@ import { initialProjects } from '../data/projects';
 import { initialTabs } from '../data/tabs';
 import { defaultSettings } from '../data/settings';
 
-// API configuration
-// Vite environment variables: import.meta.env.VITE_*
-// On GitHub Pages: VITE_API_URL will be undefined or empty (no backend)
-// On local dev: VITE_API_URL will be http://localhost:5000/api
 let API_URL = import.meta.env.VITE_API_URL;
 
 // Only set localhost fallback if in development mode

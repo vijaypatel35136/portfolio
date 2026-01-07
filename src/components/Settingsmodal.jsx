@@ -103,6 +103,21 @@ export default function SettingsModal({ settings, onClose, onSave }) {
             }
         }));
     };
+    const updateContactFormField = (fieldKey, fieldProp, value) => {
+        setEditedSettings(prev => ({
+            ...prev,
+            contact: {
+                ...prev.contact,
+                formFields: {
+                    ...prev.contact.formFields,
+                    [fieldKey]: {
+                        ...prev.contact.formFields[fieldKey],
+                        [fieldProp]: value
+                    }
+                }
+            }
+        }));
+    };
 
     const sections = [
         { id: 'hero', label: 'Hero Section' },
