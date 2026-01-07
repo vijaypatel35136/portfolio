@@ -23,10 +23,17 @@ import { initialTabs } from '../data/tabs';
 import { defaultSettings } from '../data/settings';
 
 // API configuration
-// For GitHub Pages: use empty string (no backend)
-// For local development: use localhost:5000
-// Vite uses import.meta.env.VITE_* for environment variables
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Vite environment variables: import.meta.env.VITE_*
+// On GitHub Pages: VITE_API_URL will be undefined or empty (no backend)
+// On local dev: VITE_API_URL will be http://localhost:5000/api
+let API_URL = import.meta.env.VITE_API_URL;
+
+// Only set localhost fallback if in development mode
+if (!API_URL && import.meta.env.DEV) {
+    API_URL = 'http://localhost:5000/api';
+}
+
+console.log('🔧 API_URL configured as:', API_URL || '(no backend - localStorage only)');
 
 export default function ShopifyPortfolio() {
 
@@ -72,9 +79,9 @@ export default function ShopifyPortfolio() {
     /* ===================== CHECK BACKEND AVAILABILITY ===================== */
     useEffect(() => {
         const checkBackend = async () => {
-            // If API_URL is empty, skip backend check (GitHub Pages with localStorage only)
-            if (!API_URL || API_URL.trim() === '') {
-                console.log('⚠️ No backend configured - using localStorage only');
+            // If API_URL is not defined, skip backend check (GitHub Pages with localStorage only)
+            if (!API_URL) {
+                console.log('✅ No backend configured - using localStorage only');
                 setBackendAvailable(false);
                 return;
             }
